@@ -1,0 +1,33 @@
+name: Submit Application to B12
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Submit application
+        env:
+          SIGNING_SECRET: ${{ secrets.SIGNING_SECRET }}
+          EMAIL: ${{ vars.EMAIL }}
+          RESUME_LINK: ${{ vars.RESUME_LINK }}
+          NAME: ${{ vars.NAME }}
+          REPOSITORY_LINK: ${{ vars.REPOSITORY_LINK }}
+          ENDPOINT_URL: ${{ vars.ENDPOINT_URL }}
+          ACTION_RUN_LINK: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        run: python main.py
