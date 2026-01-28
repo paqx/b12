@@ -10,7 +10,7 @@ import sys
 from datetime import datetime, timezone
 from typing import Any
 
-# import requests
+import requests
 
 
 ENDPOINT_URL = "https://b12.io/apply/submission"
@@ -70,41 +70,38 @@ def main():
     print("Payload JSON:", payload_bytes.decode('utf-8'))
     print("Signature:", signature)
 
-    print("Signing secret test:")
-    print(env_vars["SIGNING_SECRET"])
+    headers = {
+        "Content-Type": "application/json",
+        "X-Signature-256": f"sha256={signature}",
+    }
 
-    # headers = {
-    #     "Content-Type": "application/json",
-    #     "X-Signature-256": f"sha256={signature}",
-    # }
+    success = False
+    try:
+        response = requests.post(
+            ENDPOINT_URL,
+            data=payload_bytes,
+            headers=headers,
+            timeout=10
+        )
 
-    # success = False
-    # try:
-    #     response = requests.post(
-    #         ENDPOINT_URL,
-    #         data=payload_bytes,
-    #         headers=headers,
-    #         timeout=10
-    #     )
+        if response.status_code == 200:
+            result = response.json()
 
-    #     if response.status_code == 200:
-    #         result = response.json()
+            if result.get("success"):
+                receipt = result.get("receipt", "")
+                print("Application submitted:")
+                print(f"Receipt: {receipt}")
+                success = True
+            else:
+                print(f"Submission failed: {result}")
+        else:
+            print(f"HTTP Error {response.status_code}: {response.text}")
+    except requests.exceptions.RequestException as e:
+        print(f"Network error: {e}")
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        print(f"Unexpected error: {e}")
 
-    #         if result.get("success"):
-    #             receipt = result.get("receipt", "")
-    #             print("Application submitted:")
-    #             print(f"Receipt: {receipt}")
-    #             success = True
-    #         else:
-    #             print(f"Submission failed: {result}")
-    #     else:
-    #         print(f"HTTP Error {response.status_code}: {response.text}")
-    # except requests.exceptions.RequestException as e:
-    #     print(f"Network error: {e}")
-    # except Exception as e:  # pylint: disable=broad-exception-caught
-    #     print(f"Unexpected error: {e}")
-
-    # sys.exit(0 if success else 1)
+    sys.exit(0 if success else 1)
 
 
 if __name__ == "__main__":
